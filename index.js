@@ -1,0 +1,22 @@
+require("rootpath")();
+const express = require("express");
+const app = express();
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const errorHandler = require("utils/error-handler");
+
+
+app.use(bodyParser.urlencoded({ limit: "150mb", extended: false }));
+app.use(bodyParser.json({ limit: "150mb" }));
+app.use(cors());
+
+app.use('/categories', require('./categories/categories.controller'));
+app.use('/clients', require('./clients/clients.controller'));
+
+
+app.use(errorHandler);
+
+const port = process.env.NODE_ENV === "production" ? process.env.PORT || 80 : 4000;
+const server = app.listen(port, function () {
+    console.log("Server listening on port " + port);
+});
