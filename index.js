@@ -5,6 +5,11 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const errorHandler = require("utils/error-handler");
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
 app.use(bodyParser.urlencoded({ limit: "150mb", extended: false }));
 app.use(bodyParser.json({ limit: "150mb" }));

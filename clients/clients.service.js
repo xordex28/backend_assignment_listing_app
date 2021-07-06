@@ -45,13 +45,13 @@ const addClient = async (client) => {
 
     const newClient = new Client(client);
 
-    const response = await newClient.save((err) => {
+    await newClient.save((err) => {
         if (err) {
             throw err;
         }
     });
 
-    return response;
+    return newClient;
 }
 
 const updateClient = async (id, client) => {
@@ -69,12 +69,12 @@ const updateClient = async (id, client) => {
 
     Object.assign(currentClient, client);
 
-    const response = await currentClient.save((err) => {
+    await currentClient.save((err) => {
         if (err) {
             throw err;
         }
     });
-    return response;
+    return currentClient;
 }
 
 const deleteClient = async (id) => {

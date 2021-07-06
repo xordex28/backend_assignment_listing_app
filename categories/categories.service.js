@@ -32,13 +32,13 @@ const addCategory = async (category) => {
 
     const newCategory = new Category(category);
 
-    const response = await newCategory.save((err) => {
+    await newCategory.save((err) => {
         if (err) {
             throw err;
         }
     });
 
-    return response;
+    return newCategory;
 }
 
 const updateCategory = async (id, category) => {
@@ -55,13 +55,13 @@ const updateCategory = async (id, category) => {
     category.updatedDate = Date.now();
 
     Object.assign(currentCategory, category);
-    
-    const response = await currentCategory.save((err) => {
+
+    await currentCategory.save((err) => {
         if (err) {
             throw err;
         }
     });
-    return response;
+    return currentCategory;
 }
 
 const deleteCategory = async (id) => {
