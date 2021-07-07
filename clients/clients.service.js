@@ -1,18 +1,17 @@
-const config = require('config.json');
 const db = require('../utils/db');
 const Client = db.Client;
-const bson = require('bson');
+const { ObjectId } = require('bson');
 
 const getAllClients = async () => {
     return await Client.find({});
 }
 
 const getClientById = async (id) => {
-    const client = await Client.findOne({ _id: bson.ObjectId(id) });
+    const client = await Client.findOne({ _id: ObjectId(id) });
     if (!client) {
         throw 'Client not found';
     }
-    return await Client.findOne({ _id: bson.ObjectId(id) });
+    return await Client.findOne({ _id: ObjectId(id) });
 }
 
 const addClient = async (client) => {
@@ -55,7 +54,7 @@ const addClient = async (client) => {
 }
 
 const updateClient = async (id, client) => {
-    const currentClient = await Client.findOne({ _id: bson.ObjectId(id) });
+    const currentClient = await Client.findOne({ _id: ObjectId(id) });
     if (
         !(currentClient)
     ) {
@@ -78,18 +77,14 @@ const updateClient = async (id, client) => {
 }
 
 const deleteClient = async (id) => {
-    const currentClient = await Client.findOne({ _id: bson.ObjectId(id) });
+    const currentClient = await Client.findOne({ _id: ObjectId(id) });
     if (
         !(currentClient)
     ) {
         throw 'Client not found';
     }
-    try {
-        const response = await Client.deleteOne({ _id: bson.ObjectId(id) });
-        return response;
-    } catch (err) {
-        throw err;
-    }
+    const response = await Client.deleteOne({ _id: ObjectId(id) });
+    return response;
 
 }
 

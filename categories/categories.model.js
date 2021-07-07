@@ -15,7 +15,7 @@ const modelCategory = new Schema({
         type: Date,
         default: Date.now()
     },
-    status: {
+    active: {
         type: Boolean,
         default: true
     }

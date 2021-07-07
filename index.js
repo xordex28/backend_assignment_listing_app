@@ -17,6 +17,8 @@ app.use(cors());
 
 app.use('/categories', require('./categories/categories.controller'));
 app.use('/clients', require('./clients/clients.controller'));
+app.use('/users', require('./users/users.controller'));
+
 
 
 app.use(errorHandler);

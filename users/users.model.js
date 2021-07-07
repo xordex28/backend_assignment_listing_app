@@ -11,14 +11,20 @@ const modelRole = new Schema({
         type: Boolean,
         default: false
     },
+    canSuper: {
+        type: Boolean,
+        default: false
+    },
     permits: [{
         client: {
             type: Schema.Types.ObjectId,
+            ref: 'Client',
             required: true
         },
         categories: [{
             category: {
                 type: Schema.Types.ObjectId,
+                ref: 'Category',
                 required: true
             },
             canApprove: {
@@ -35,7 +41,7 @@ const modelRole = new Schema({
         type: Date,
         default: Date.now()
     },
-    status: {
+    active: {
         type: Boolean,
         default: true
     }
@@ -52,6 +58,9 @@ const modelUser = new Schema({
         type: String,
         required: true
     },
+    "access_token": {
+        type: String
+    },
     firstName: {
         type: String,
         required: true
@@ -66,17 +75,19 @@ const modelUser = new Schema({
     },
     role: {
         type: Schema.Types.ObjectId,
-        ref: 'modelRole',
+        ref: 'Role',
         required: true
     },
     permits: [{
         client: {
             type: Schema.Types.ObjectId,
+            ref: 'Client',
             required: true
         },
         categories: [{
             category: {
                 type: Schema.Types.ObjectId,
+                ref: 'Category',
                 required: true
             },
             canApprove: {
@@ -89,7 +100,7 @@ const modelUser = new Schema({
         type: Boolean,
         default: false
     },
-    status: {
+    active: {
         type: Boolean,
         default: true
     }
