@@ -1,11 +1,18 @@
 const db = require('../utils/db');
 const { ObjectId } = require('bson');
-const crypto = require('crypto')
+const bcrypt = require("bcryptjs");
+const config = require("config.json");
+const Development = false;
+const jwt = require("jsonwebtoken");
+const randT = require("rand-token");
 
 const {
     User,
     Role
 } = db;
+
+let refreshTokens = {};
+
 
 // TODO: Events for Model Role
 
@@ -51,7 +58,7 @@ const deleteRole = async (id) => {
         throw 'Role not found';
     }
     const usersOnRole = await User.find({ role: id });
-    if(usersOnRole.length > 0){
+    if (usersOnRole.length > 0) {
         throw 'Cannot be deleted as there are users with the role';
     }
     const response = await Role.deleteOne({ _id: ObjectId(id) });
@@ -116,8 +123,7 @@ const addUser = async (user) => {
     if (!('password' in user) && user.password !== '') {
         throw 'Field Password not defined';
     }
-    user.hash = user.password;
-    delete user.password;
+    user.hash = bcrypt.hashSync(user.password, 10);
 
     //Validate the FirstName
     if (!('firstName' in user) && user.firstName !== '') {
@@ -173,6 +179,91 @@ const deleteUser = async (id) => {
     return response;
 }
 
+// TODO: Validation for TOKENS
+
+// Validate if the user is loggedIn
+async function isLoggedIn({ username }) {
+    const user = await User.findOne({
+        username
+    });
+    if (user !== null) {
+        if (user.accesToken !== null) {
+            try {
+                jwt.verify(user.accesToken, config.secret);
+            } catch (error) {
+                if (error.name === "TokenExpiredError" && user.loggedIn) {
+                    return false;
+                }
+            }
+        }
+        return user.loggedIn;
+    }
+    return null;
+}
+
+//process the log in
+async function authenticate({ username, password }) {
+    const user = await User.findOne({
+        username
+    }).populate('role');
+    if (user && bcrypt.compareSync(password, user.hash)) {
+        user.loggedIn = true;
+        const { hash, ...userWithoutHash } = user.toObject();
+        const token = jwt.sign(
+            {
+                name: username,
+                sub: user.id,
+                rol: user.rol
+            },
+            config.secret,
+            {
+                expiresIn: Development ? 60 * 60 : 60
+            }
+        );
+
+        user.accesToken = token;
+        const tokenRefresh = randT.generate(16);
+        refreshTokens[tokenRefresh] = username;
+        await user.save();
+        return {
+            ...userWithoutHash,
+            token,
+            tokenRefresh
+        };
+    }
+}
+
+//Refresh the token
+async function gNewTokenAcces(usernameparam, tokenRefresh) {
+    refreshTokens[tokenRefresh] = usernameparam;
+    if (
+        tokenRefresh in refreshTokens &&
+        refreshTokens[tokenRefresh] === usernameparam
+    ) {
+        var user = await User.findOne({
+            username: usernameparam
+        }).populate('role');
+        if (user) {
+            user.accesToken = jwt.sign(
+                {
+                    name: user.username,
+                    sub: user.id,
+                    rol: user.rol
+                },
+                config.secret,
+                {
+                    expiresIn: Development ? 60 * 60 : 60
+                }
+            );
+            await user.save();
+            return user.accesToken;
+        } else {
+            return "User Not Found";
+        }
+    } else {
+        return "User Not Authorized";
+    }
+}
 module.exports = {
     getAllRoles,
     getRoleById,
@@ -184,5 +275,9 @@ module.exports = {
     getUserById,
     addUser,
     updateUser,
-    deleteUser
+    deleteUser,
+
+    isLoggedIn,
+    authenticate,
+    gNewTokenAcces
 }

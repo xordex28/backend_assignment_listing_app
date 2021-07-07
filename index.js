@@ -3,7 +3,8 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const errorHandler = require("utils/error-handler");
+const errorHandler = require("./utils/error-handler");
+const jwt = require("./utils/exceptionsJWT");
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
@@ -14,6 +15,8 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(bodyParser.urlencoded({ limit: "150mb", extended: false }));
 app.use(bodyParser.json({ limit: "150mb" }));
 app.use(cors());
+
+//app.use(jwt());
 
 app.use('/categories', require('./categories/categories.controller'));
 app.use('/clients', require('./clients/clients.controller'));

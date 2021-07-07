@@ -58,8 +58,10 @@ const modelUser = new Schema({
         type: String,
         required: true
     },
-    "access_token": {
-        type: String
+    "accesToken": {
+        type: String,
+        required: false,
+		default: 'null'
     },
     firstName: {
         type: String,
