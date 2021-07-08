@@ -2,9 +2,12 @@ const db = require('../utils/db');
 const { ObjectId } = require('bson');
 const bcrypt = require("bcryptjs");
 const config = require("config.json");
-const Development = false;
+const Development = true;
 const jwt = require("jsonwebtoken");
 const randT = require("rand-token");
+const clientService = require("../clients/clients.service");
+const categoryService = require("../categories/categories.service");
+const { asyncForEach } = require("../utils/generalFunctions")
 
 const {
     User,
@@ -21,7 +24,7 @@ const getAllRoles = async () => {
 }
 
 const getRoleById = async (id) => {
-    const currentRole = await Role.findOne({ _id: bson.ObjectId(id) });
+    const currentRole = await Role.findOne({ _id: ObjectId(id) });
     if (!currentRole) {
         throw 'Role not found';
     }
@@ -40,7 +43,7 @@ const addRole = async (role) => {
 }
 
 const updateRole = async (id, role) => {
-    const currentRole = await Role.findOne({ _id: bson.ObjectId(id) });
+    const currentRole = await Role.findOne({ _id: ObjectId(id) });
     if (!role) {
         throw 'Role not found';
     }
@@ -65,6 +68,63 @@ const deleteRole = async (id) => {
     return response;
 }
 
+const assingRoleAproven = async (id, permits) => {
+    console.log("entro")
+    const role = await getRoleById(id);
+    let errors = [];
+    if (!role) {
+        throw 'Role not found';
+    }
+    if (permits.length <= 0) {
+        throw 'The permission array cannot be empty';
+    }
+
+    if (!role.canSuper) {
+        if (!role.canApprove) {
+            throw 'User does not have permission to approve';
+        }
+    }
+
+    await asyncForEach(permits, async (permit) => {
+        try {
+            if (!('client' in permit) || permit.client === '') {
+                errors.push({ ...permit, error: 'the client is empty' });
+            }
+            let client = await clientService.getClientById(permit.client);
+            if (!client) {
+                errors.push({ ...permit, error: 'the client does not exist' });
+            }
+            if (!('categories' in permit) || permit.categories.length <= 0) {
+                errors.push({ ...permit, error: 'the categories is empty' });
+            }
+            await asyncForEach(permit.categories, async (category) => {
+                if (!('category' in category || category.category === '')) {
+                    errors.push({ ...category, error: 'the category is empty' });
+                }
+                let currentCategory = await categoryService.getCategoryById(category.category);
+                if (!currentCategory) {
+                    errors.push({ ...category, error: 'The category does not exist' });
+                }
+            });
+        } catch (error) {
+            errors.push({ ...permit, error: error.message });
+        }
+    });
+
+    if (errors.length > 0) {
+        throw errors;
+    }
+    try {
+        await updateRole(id, {
+            permits
+        });
+        return role;
+    } catch (err) {
+        throw err;
+    }
+
+}
+
 // TODO: Events for Model User
 
 const getAllUsers = async () => {
@@ -74,20 +134,22 @@ const getAllUsers = async () => {
         "lastName": 1,
         "loggedIn": 1,
         "role": 1,
+        "permits": 1,
         "active": 1
     }).populate("role");
 }
 
 const getUserById = async (id) => {
-    const currentUser = await User.findOne({ _id: ObjectId(id) }, {
-        "username": 1,
-        "firstName": 1,
-        "lastName": 1,
-        "loggedIn": 1,
-        "role": 1,
-        "active": 1
-
-    }).populate('role');
+    const currentUser = await User.findOne({ _id: ObjectId(id) },
+        {
+            "username": 1,
+            "firstName": 1,
+            "lastName": 1,
+            "loggedIn": 1,
+            "role": 1,
+            "permits": 1,
+            "active": 1
+        }).populate('role');
 
     if (!currentUser) {
         throw 'User not found';
@@ -179,10 +241,66 @@ const deleteUser = async (id) => {
     return response;
 }
 
+const assingUserAproven = async (id, permits) => {
+    const user = await getUserById(id);
+    let errors = [];
+    if (!user) {
+        throw 'User not found';
+    }
+    if (permits.length <= 0) {
+        throw 'The permission array cannot be empty';
+    }
+
+    if (!user.role.canSuper) {
+        if (!user.role.canApprove) {
+            throw 'User does not have permission to approve';
+        }
+    }
+
+    await asyncForEach(permits, async (permit) => {
+        try {
+            if (!('client' in permit) || permit.client === '') {
+                errors.push({ ...permit, error: 'the client is empty' });
+            }
+            let client = await clientService.getClientById(permit.client);
+            if (!client) {
+                errors.push({ ...permit, error: 'the client does not exist' });
+            }
+            if (!('categories' in permit) || permit.categories.length <= 0) {
+                errors.push({ ...permit, error: 'the categories is empty' });
+            }
+            await asyncForEach(permit.categories, async (category) => {
+                if (!('category' in category || category.category === '')) {
+                    errors.push({ ...category, error: 'the category is empty' });
+                }
+                let currentCategory = await categoryService.getCategoryById(category.category);
+                if (!currentCategory) {
+                    errors.push({ ...category, error: 'The category does not exist' });
+                }
+            });
+        } catch (error) {
+            errors.push({ ...permit, error: error.message });
+        }
+    });
+
+    if (errors.length > 0) {
+        throw errors;
+    }
+    try {
+        await updateUser(id, {
+            permits
+        });
+        return user;
+    } catch (err) {
+        throw err;
+    }
+
+}
+
 // TODO: Validation for TOKENS
 
 // Validate if the user is loggedIn
-async function isLoggedIn({ username }) {
+const isLoggedIn = async ({ username }) => {
     const user = await User.findOne({
         username
     });
@@ -202,7 +320,7 @@ async function isLoggedIn({ username }) {
 }
 
 //process the log in
-async function authenticate({ username, password }) {
+const authenticate = async ({ username, password }) => {
     const user = await User.findOne({
         username
     }).populate('role');
@@ -234,7 +352,7 @@ async function authenticate({ username, password }) {
 }
 
 //Refresh the token
-async function gNewTokenAcces(usernameparam, tokenRefresh) {
+const gNewTokenAcces = async (usernameparam, tokenRefresh) => {
     refreshTokens[tokenRefresh] = usernameparam;
     if (
         tokenRefresh in refreshTokens &&
@@ -264,20 +382,35 @@ async function gNewTokenAcces(usernameparam, tokenRefresh) {
         return "User Not Authorized";
     }
 }
+
+//Log Out
+const logout = async (id, userParam) => {
+    var user = await User.findOne({ _id: ObjectId(id) });
+    if (!user) {
+        throw "User not found";
+    }
+    user.loggedIn = false;
+    user.accesToken = "null";
+    await user.save();
+}
+
 module.exports = {
     getAllRoles,
     getRoleById,
     addRole,
     updateRole,
     deleteRole,
+    assingRoleAproven,
 
     getAllUsers,
     getUserById,
     addUser,
     updateUser,
     deleteUser,
+    assingUserAproven,
 
     isLoggedIn,
     authenticate,
-    gNewTokenAcces
+    gNewTokenAcces,
+    logout
 }

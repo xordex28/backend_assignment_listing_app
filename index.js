@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({ limit: "150mb", extended: false }));
 app.use(bodyParser.json({ limit: "150mb" }));
 app.use(cors());
 
-//app.use(jwt());
+app.use(jwt());
 
 app.use('/categories', require('./categories/categories.controller'));
 app.use('/clients', require('./clients/clients.controller'));

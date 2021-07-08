@@ -35,7 +35,18 @@ const deleteRole = (req, res, next) => {
         .catch(err => next(err));
 }
 
+const assingRoleAproven = (req, res, next) => {
+    console.log('hello')
+    userService.assingRoleAproven(req.params.id, req.body)
+        .then(role => res.json(role))
+        .catch(err => next(err));
+}
+
 //TODO: Routes for User
+const getCurrentUser = (req, res, next) => {
+    res.json(req.currentUser)
+}
+
 const getAllUsers = (req, res, next) => {
     userService.getAllUsers()
         .then(users => res.json(users))
@@ -62,6 +73,13 @@ const updateUser = (req, res, next) => {
 
 const deleteUser = (req, res, next) => {
     userService.deleteUser(req.params.id)
+        .then(user => res.json(user))
+        .catch(err => next(err));
+}
+
+const assingUserAproven = (req, res, next) => {
+    console.log('hello')
+    userService.assingUserAproven(req.params.id, req.body)
         .then(user => res.json(user))
         .catch(err => next(err));
 }
@@ -113,20 +131,30 @@ const refreshTokens = (req, res, next) => {
         .catch((err) => next(err));
 }
 
+const logout = (req, res, next) =>{
+	userService.logout(req.params.id)
+		.then(() => res.json({}))
+		.catch((err) => next(err));
+}
+
 router.get('/roles/', getAllRoles);
 router.get('/roles/:id', getRoleById);
 router.post('/roles/', addRole);
+router.post('/roles/:id/canApproven', assingRoleAproven);
 router.put('/roles/:id', updateRole);
 router.delete('/roles/:id', deleteRole);
 
+router.get('/users/current/', getCurrentUser);
 router.get('/users/', getAllUsers);
 router.get('/users/:id', getUserById);
 router.post('/users/', addUser);
+router.post('/users/:id/canApproven', assingUserAproven);
 router.put('/users/:id', updateUser);
 router.delete('/users/:id', deleteUser);
 
 router.post('/authenticate', authenticate);
 router.post('/token', refreshTokens);
 router.post('/isTokenExpired', isTokenExpired);
+router.post('/logout/:id', logout);
 
 module.exports = router;

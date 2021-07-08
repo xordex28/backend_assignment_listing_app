@@ -3,12 +3,15 @@ const router = express.Router();
 const categoryService = require('./categories.service');
 
 const getAllCategories = (req, res, next) => {
+    console.log(req.baseUrl);
     categoryService.getAllCategories()
         .then(categories => res.json(categories))
         .catch(err => next(err));
 };
 
 const getCategoryById = (req, res, next) => {
+    console.log(req.originalUrl);
+
     categoryService.getCategoryById(req.params.id)
         .then(categories => res.json(categories))
         .catch(err => next(err));

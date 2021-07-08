@@ -548,6 +548,47 @@
                 }
             }
         },
+        "/users/roles/{id}/canApproven": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Approve In Role",
+                "description": "",
+                "operationId": "approve",
+                "consumes": [
+                    "application/json",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/xml",
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID from Role",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Role used from the assing project",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PermitAproved"
+                        }
+                    }
+                ],
+                "responses": {
+                    "405": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
+        },
         "/users/users/": {
             "get": {
                 "tags": [
@@ -719,6 +760,47 @@
                     }
                 }
             }
+        },
+        "/users/users/{id}/canApproven": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Approve In User",
+                "description": "",
+                "operationId": "approve",
+                "consumes": [
+                    "application/json",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/xml",
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID from User",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "User used from the assing project",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PermitAproved"
+                        }
+                    }
+                ],
+                "responses": {
+                    "405": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -801,6 +883,36 @@
                 "active": {
                     "type": "boolean",
                     "default": true
+                }
+            }
+        },
+        "PermitAproved": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "categories": {
+                        "type": "array",
+                        "required": true,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "category": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "canApprove": {
+                                    "type": "boolean",
+                                    "required": true,
+                                    "default": true
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
