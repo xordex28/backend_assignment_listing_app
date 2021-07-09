@@ -17,5 +17,7 @@ module.exports = {
     User: require('../users/users.model').User,
     Role: require('../users/users.model').Role,
     Category: require('../categories/categories.model').Category,
-    Client: require('../clients/clients.model').Client
+    Client: require('../clients/clients.model').Client,
+    Task: require('../tasks/tasks.model').Task
+
 }

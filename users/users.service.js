@@ -297,6 +297,109 @@ const assingUserAproven = async (id, permits) => {
 
 }
 
+const getAssignmentUserAproven = async (id) => {
+    const query = [
+        {
+          "$match": {
+            "_id": ObjectId(id)
+          }
+        }, {
+          "$lookup": {
+            "from": "roles", 
+            "localField": "role", 
+            "foreignField": "_id", 
+            "as": "role"
+          }
+        }, {
+          "$unwind": {
+            "path": "$role"
+          }
+        }, {
+          "$unwind": {
+            "path": "$permits"
+          }
+        }, {
+          "$unwind": {
+            "path": "$permits.categories"
+          }
+        }, {
+          "$unwind": {
+            "path": "$role.permits"
+          }
+        }, {
+          "$unwind": {
+            "path": "$role.permits.categories"
+          }
+        }, {
+          "$match": {
+            "$or": [
+              {
+                "role.permits.categories.canApprove": true
+              }, {
+                "permits.categories.canApprove": true
+              }
+            ]
+          }
+        }, {
+          "$group": {
+            "_id": {
+              "_id": "$_id"
+            }, 
+            "permits": {
+              "$push": "$permits"
+            }, 
+            "permitsRole": {
+              "$push": "$role.permits"
+            }
+          }
+        }, {
+          "$addFields": {
+            "permitsAll": {
+              "$concatArrays": [
+                "$permits", "$permitsRole"
+              ]
+            }
+          }
+        }, {
+          "$project": {
+            "permits": "$permitsAll"
+          }
+        }, {
+          "$unwind": {
+            "path": "$permits"
+          }
+        }, {
+          "$group": {
+            "_id": {
+              "_id": "$_id._id", 
+              "client": "$permits.client"
+            }, 
+            "categories": {
+              "$push": "$permits.categories"
+            }
+          }
+        }, {
+          "$group": {
+            "_id": "$_id._id", 
+            "permits": {
+              "$push": {
+                "client": "$_id.client", 
+                "categories": "$categories"
+              }
+            }
+          }
+        }
+      ]
+
+    const permits = await User.aggregate(query);
+
+    if (permits.length <= 0) {
+        throw 'User does not have permission to approve';
+    }
+
+    return permits;
+}
+
 // TODO: Validation for TOKENS
 
 // Validate if the user is loggedIn
@@ -335,7 +438,7 @@ const authenticate = async ({ username, password }) => {
             },
             config.secret,
             {
-                expiresIn: Development ? 60 * 60 : 60
+                //expiresIn: Development ? 60 * 60 : 60
             }
         );
 
@@ -412,5 +515,7 @@ module.exports = {
     isLoggedIn,
     authenticate,
     gNewTokenAcces,
-    logout
+    logout,
+
+    getAssignmentUserAproven
 }

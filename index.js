@@ -21,6 +21,7 @@ app.use(jwt());
 app.use('/categories', require('./categories/categories.controller'));
 app.use('/clients', require('./clients/clients.controller'));
 app.use('/users', require('./users/users.controller'));
+app.use('/tasks', require('./tasks/tasks.controller'));
 
 
 

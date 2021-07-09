@@ -14,22 +14,23 @@ const isRevoked = async (req, payload, done) => {
         return done(null, true);
     }
 
-    if (!user.role.canSuper) {
-        exception.forEach((regex) => {
-            console.log(regex,route,regex.test(route));
-            if (regex.test(route)) {
-                success = true;
-            }
-        });
-        if (!success) {
-            return done(null, true);
-        }
-    }
+    // if (!user.role.canSuper) {
+    //     exception.forEach((regex) => {
+    //         console.log(regex,route,regex.test(route));
+    //         if (regex.test(route)) {
+    //             success = true;
+    //         }
+    //     });
+    //     if (!success) {
+    //         return done(null, true);
+    //     }
+    // }
     req.currentUser = user;
     done();
 };
 
-const jwt = () => {
+const jwt = (req,res,next) => {
+    console.log(req)
     const secret = config.secret;
     return expressJwt({ secret, isRevoked, algorithms: ['HS256'] }).unless({
         path: [
