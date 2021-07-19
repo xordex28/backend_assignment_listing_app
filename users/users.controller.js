@@ -59,6 +59,12 @@ const getUserById = (req, res, next) => {
         .catch(err => next(err));
 }
 
+const getUserByUsername = (req, res, next) => {
+    userService.getUserByUsername(req.params.user)
+        .then(user => res.json(user))
+        .catch(err => next(err));
+}
+
 const addUser = (req, res, next) => {
     userService.addUser(req.body)
         .then(user => res.json(user))
@@ -147,6 +153,7 @@ router.delete('/roles/:id', deleteRole);
 router.get('/users/current/', getCurrentUser);
 router.get('/users/', getAllUsers);
 router.get('/users/:id', getUserById);
+router.get('/users/match/:user', getUserByUsername);
 router.post('/users/', addUser);
 router.post('/users/:id/canApproven', assingUserAproven);
 router.put('/users/:id', updateUser);

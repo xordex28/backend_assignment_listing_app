@@ -32,26 +32,31 @@ const getRoleById = async (id) => {
 }
 
 const addRole = async (role) => {
+    let newRole;
     if (!('description' in role)) {
         throw 'Field description not defined';
     }
-    const newRole = new Role(role);
-    await newRole.save((err) => {
-        throw err;
-    });
+    try {
+        newRole = new Role(role);
+        await Role.create(newRole);
+    } catch (error) {
+        throw error;
+    }
     return newRole;
 }
 
 const updateRole = async (id, role) => {
-    const currentRole = await Role.findOne({ _id: ObjectId(id) });
+    let currentRole = await Role.findOne({ _id: ObjectId(id) });
     if (!role) {
         throw 'Role not found';
     }
-    role.updatedDate = Date.now();
-    Object.assign(currentRole, role);
-    await currentRole.save((err) => {
-        throw err;
-    });
+    try {
+        role.updatedDate = Date.now();
+        Object.assign(currentRole, role);
+        await Role.updateOne({ _id: ObjectId(id) }, currentRole);
+    } catch (error) {
+        throw error;
+    }
     return currentRole
 }
 
@@ -135,7 +140,10 @@ const getAllUsers = async () => {
         "loggedIn": 1,
         "role": 1,
         "permits": 1,
-        "active": 1
+        "active": 1,
+        "active": 1,
+        "createdDate": 1,
+        "updatedDate": 1
     }).populate("role");
 }
 
@@ -148,7 +156,10 @@ const getUserById = async (id) => {
             "loggedIn": 1,
             "role": 1,
             "permits": 1,
-            "active": 1
+            "active": 1,
+            "active": 1,
+            "createdDate": 1,
+            "updatedDate": 1
         }).populate('role');
 
     if (!currentUser) {
@@ -158,8 +169,14 @@ const getUserById = async (id) => {
     return currentUser;
 }
 
-const addUser = async (user) => {
+const getUserByUsername = async (username) => {
+    console.log(username)
+    const currentUser = await User.findOne({ "username": username }, { "username": 1 });
+    return currentUser;
+}
 
+const addUser = async (user) => {
+    let newUser;
     //Validate the username
     if (!('username' in user) && user.username !== '') {
         throw 'Field Username not defined';
@@ -196,12 +213,12 @@ const addUser = async (user) => {
     if (!('lastName' in user) && user.lastName !== '') {
         throw 'Field LastName not defined';
     }
-
-    const newUser = new User(user);
-    await newUser.save((err) => {
-        throw err;
-    });
-
+    try {
+        newUser = new User(user);
+        await User.create(newUser)
+    } catch (error) {
+        throw error;
+    }
     return newUser;
 }
 
@@ -223,10 +240,13 @@ const updateUser = async (id, user) => {
         delete user.password;
     }
 
-    Object.assign(currentUser, user);
-    await currentUser.save((err) => {
-        throw err;
-    });
+    try {
+        Object.assign(currentUser, user);
+        await User.updateOne({ _id: ObjectId(id) }, currentUser);
+    } catch (error) {
+        throw error;
+    }
+
 
     return currentUser;
 }
@@ -300,96 +320,96 @@ const assingUserAproven = async (id, permits) => {
 const getAssignmentUserAproven = async (id) => {
     const query = [
         {
-          "$match": {
-            "_id": ObjectId(id)
-          }
-        }, {
-          "$lookup": {
-            "from": "roles", 
-            "localField": "role", 
-            "foreignField": "_id", 
-            "as": "role"
-          }
-        }, {
-          "$unwind": {
-            "path": "$role"
-          }
-        }, {
-          "$unwind": {
-            "path": "$permits"
-          }
-        }, {
-          "$unwind": {
-            "path": "$permits.categories"
-          }
-        }, {
-          "$unwind": {
-            "path": "$role.permits"
-          }
-        }, {
-          "$unwind": {
-            "path": "$role.permits.categories"
-          }
-        }, {
-          "$match": {
-            "$or": [
-              {
-                "role.permits.categories.canApprove": true
-              }, {
-                "permits.categories.canApprove": true
-              }
-            ]
-          }
-        }, {
-          "$group": {
-            "_id": {
-              "_id": "$_id"
-            }, 
-            "permits": {
-              "$push": "$permits"
-            }, 
-            "permitsRole": {
-              "$push": "$role.permits"
+            "$match": {
+                "_id": ObjectId(id)
             }
-          }
         }, {
-          "$addFields": {
-            "permitsAll": {
-              "$concatArrays": [
-                "$permits", "$permitsRole"
-              ]
+            "$lookup": {
+                "from": "roles",
+                "localField": "role",
+                "foreignField": "_id",
+                "as": "role"
             }
-          }
         }, {
-          "$project": {
-            "permits": "$permitsAll"
-          }
-        }, {
-          "$unwind": {
-            "path": "$permits"
-          }
-        }, {
-          "$group": {
-            "_id": {
-              "_id": "$_id._id", 
-              "client": "$permits.client"
-            }, 
-            "categories": {
-              "$push": "$permits.categories"
+            "$unwind": {
+                "path": "$role"
             }
-          }
         }, {
-          "$group": {
-            "_id": "$_id._id", 
-            "permits": {
-              "$push": {
-                "client": "$_id.client", 
-                "categories": "$categories"
-              }
+            "$unwind": {
+                "path": "$permits"
             }
-          }
+        }, {
+            "$unwind": {
+                "path": "$permits.categories"
+            }
+        }, {
+            "$unwind": {
+                "path": "$role.permits"
+            }
+        }, {
+            "$unwind": {
+                "path": "$role.permits.categories"
+            }
+        }, {
+            "$match": {
+                "$or": [
+                    {
+                        "role.permits.categories.canApprove": true
+                    }, {
+                        "permits.categories.canApprove": true
+                    }
+                ]
+            }
+        }, {
+            "$group": {
+                "_id": {
+                    "_id": "$_id"
+                },
+                "permits": {
+                    "$push": "$permits"
+                },
+                "permitsRole": {
+                    "$push": "$role.permits"
+                }
+            }
+        }, {
+            "$addFields": {
+                "permitsAll": {
+                    "$concatArrays": [
+                        "$permits", "$permitsRole"
+                    ]
+                }
+            }
+        }, {
+            "$project": {
+                "permits": "$permitsAll"
+            }
+        }, {
+            "$unwind": {
+                "path": "$permits"
+            }
+        }, {
+            "$group": {
+                "_id": {
+                    "_id": "$_id._id",
+                    "client": "$permits.client"
+                },
+                "categories": {
+                    "$push": "$permits.categories"
+                }
+            }
+        }, {
+            "$group": {
+                "_id": "$_id._id",
+                "permits": {
+                    "$push": {
+                        "client": "$_id.client",
+                        "categories": "$categories"
+                    }
+                }
+            }
         }
-      ]
+    ]
 
     const permits = await User.aggregate(query);
 
@@ -438,7 +458,7 @@ const authenticate = async ({ username, password }) => {
             },
             config.secret,
             {
-                //expiresIn: Development ? 60 * 60 : 60
+                expiresIn: Development ? 60 * 60 : 60
             }
         );
 
@@ -456,6 +476,7 @@ const authenticate = async ({ username, password }) => {
 
 //Refresh the token
 const gNewTokenAcces = async (usernameparam, tokenRefresh) => {
+    console.log(usernameparam);
     refreshTokens[tokenRefresh] = usernameparam;
     if (
         tokenRefresh in refreshTokens &&
@@ -507,6 +528,7 @@ module.exports = {
 
     getAllUsers,
     getUserById,
+    getUserByUsername,
     addUser,
     updateUser,
     deleteUser,
