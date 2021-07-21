@@ -130,6 +130,14 @@ const assingRoleAproven = async (id, permits) => {
 
 }
 
+const getAssignmentRoleAproven = async (id) => {
+    const currentRole = await Role.findOne({ '_id': ObjectId(id) }, { permits: 1 })
+
+    if (!currentRole) {
+        throw 'Role not found';
+    }
+    return ('permits' in currentRole) ? currentRole.permits : [];
+}
 // TODO: Events for Model User
 
 const getAllUsers = async () => {
@@ -318,104 +326,14 @@ const assingUserAproven = async (id, permits) => {
 }
 
 const getAssignmentUserAproven = async (id) => {
-    const query = [
-        {
-            "$match": {
-                "_id": ObjectId(id)
-            }
-        }, {
-            "$lookup": {
-                "from": "roles",
-                "localField": "role",
-                "foreignField": "_id",
-                "as": "role"
-            }
-        }, {
-            "$unwind": {
-                "path": "$role"
-            }
-        }, {
-            "$unwind": {
-                "path": "$permits"
-            }
-        }, {
-            "$unwind": {
-                "path": "$permits.categories"
-            }
-        }, {
-            "$unwind": {
-                "path": "$role.permits"
-            }
-        }, {
-            "$unwind": {
-                "path": "$role.permits.categories"
-            }
-        }, {
-            "$match": {
-                "$or": [
-                    {
-                        "role.permits.categories.canApprove": true
-                    }, {
-                        "permits.categories.canApprove": true
-                    }
-                ]
-            }
-        }, {
-            "$group": {
-                "_id": {
-                    "_id": "$_id"
-                },
-                "permits": {
-                    "$push": "$permits"
-                },
-                "permitsRole": {
-                    "$push": "$role.permits"
-                }
-            }
-        }, {
-            "$addFields": {
-                "permitsAll": {
-                    "$concatArrays": [
-                        "$permits", "$permitsRole"
-                    ]
-                }
-            }
-        }, {
-            "$project": {
-                "permits": "$permitsAll"
-            }
-        }, {
-            "$unwind": {
-                "path": "$permits"
-            }
-        }, {
-            "$group": {
-                "_id": {
-                    "_id": "$_id._id",
-                    "client": "$permits.client"
-                },
-                "categories": {
-                    "$push": "$permits.categories"
-                }
-            }
-        }, {
-            "$group": {
-                "_id": "$_id._id",
-                "permits": {
-                    "$push": {
-                        "client": "$_id.client",
-                        "categories": "$categories"
-                    }
-                }
-            }
-        }
-    ]
 
-    const permits = await User.aggregate(query);
-
-    if (permits.length <= 0) {
-        throw 'User does not have permission to approve';
+    const currentUser = await User.findOne({ '_id': ObjectId(id) }, { role: 1, permits: 1 });
+    if (!currentUser) {
+        throw 'User not found';
     }
+    const permitsUser = ('permits' in currentUser) ? currentUser.permits : [];
+    const permitsRole = (await getAssignmentRoleAproven(currentUser.role));
+    let permits = { permitsRole, permitsUser };
 
     return permits;
 }
@@ -539,5 +457,6 @@ module.exports = {
     gNewTokenAcces,
     logout,
 
-    getAssignmentUserAproven
+    getAssignmentUserAproven,
+    getAssignmentRoleAproven
 }

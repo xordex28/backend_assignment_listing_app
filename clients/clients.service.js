@@ -39,7 +39,7 @@ const addClient = async (client) => {
     }
 
     if (client?.document) {
-        client.document = client.document.trim().toLowerCase();
+        client.document = client.document.trim();
     }
 
     const newClient = new Client(client);

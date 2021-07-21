@@ -26,6 +26,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.6.9",
     "mongoose": "^5.13.0",
+    "qrcode": "^1.4.4",
     "rand-token": "^1.0.1",
     "rootpath": "^0.1.2",
     "swagger-ui-express": "^4.1.6"

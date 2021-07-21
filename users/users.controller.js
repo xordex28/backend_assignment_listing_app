@@ -42,6 +42,13 @@ const assingRoleAproven = (req, res, next) => {
         .catch(err => next(err));
 }
 
+
+const getAssignmentRoleAproven = (req, res, next) => {
+    userService.getAssignmentRoleAproven(req.params.id)
+        .then(permits => res.json(permits))
+        .catch(err => next(err));
+}
+
 //TODO: Routes for User
 const getCurrentUser = (req, res, next) => {
     res.json(req.currentUser)
@@ -62,6 +69,12 @@ const getUserById = (req, res, next) => {
 const getUserByUsername = (req, res, next) => {
     userService.getUserByUsername(req.params.user)
         .then(user => res.json(user))
+        .catch(err => next(err));
+}
+
+const getAssignmentUserAproven = (req, res, next) => {
+    userService.getAssignmentUserAproven(req.params.id)
+        .then(permits => res.json(permits))
         .catch(err => next(err));
 }
 
@@ -137,14 +150,16 @@ const refreshTokens = (req, res, next) => {
         .catch((err) => next(err));
 }
 
-const logout = (req, res, next) =>{
-	userService.logout(req.params.id)
-		.then(() => res.json({}))
-		.catch((err) => next(err));
+const logout = (req, res, next) => {
+    userService.logout(req.params.id)
+        .then(() => res.json({}))
+        .catch((err) => next(err));
 }
 
 router.get('/roles/', getAllRoles);
 router.get('/roles/:id', getRoleById);
+router.get('/roles/permits/:id', getAssignmentRoleAproven);
+
 router.post('/roles/', addRole);
 router.post('/roles/:id/canApproven', assingRoleAproven);
 router.put('/roles/:id', updateRole);
@@ -153,6 +168,7 @@ router.delete('/roles/:id', deleteRole);
 router.get('/users/current/', getCurrentUser);
 router.get('/users/', getAllUsers);
 router.get('/users/:id', getUserById);
+router.get('/users/permits/:id', getAssignmentUserAproven);
 router.get('/users/match/:user', getUserByUsername);
 router.post('/users/', addUser);
 router.post('/users/:id/canApproven', assingUserAproven);

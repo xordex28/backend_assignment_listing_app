@@ -15,7 +15,14 @@ const getCategoryById = async (id) => {
     return await Category.findOne({ _id: ObjectId(id) });
 }
 
+const getCategoryByName = async (category) => {
+    const currentCategory = await Category.findOne({ "description": category }, { "description": 1 });
+    return currentCategory;
+}
+
 const addCategory = async (category) => {
+    let newCategory;
+
     if (!('description' in category)) {
         throw 'Field Category not defined';
     }
@@ -30,13 +37,12 @@ const addCategory = async (category) => {
         category.description = category.description.trim().toLowerCase();
     }
 
-    const newCategory = new Category(category);
-
-    await newCategory.save((err) => {
-        if (err) {
-            throw err;
-        }
-    });
+    try {
+        newCategory = new Category(category);
+        await Category.create(newCategory);
+    } catch (error) {
+        throw error;
+    }
 
     return newCategory;
 }
@@ -51,16 +57,13 @@ const updateCategory = async (id, category) => {
     if (category.description) {
         category.description = category.description.trim().toLowerCase();
     }
-
-    category.updatedDate = Date.now();
-
-    Object.assign(currentCategory, category);
-
-    await currentCategory.save((err) => {
-        if (err) {
-            throw err;
-        }
-    });
+    try {
+        category.updatedDate = Date.now();
+        Object.assign(currentCategory, category);
+        await Category.updateOne({'_id':ObjectId(id)})
+    } catch (error) {
+        throw error;
+    }
     return currentCategory;
 }
 
@@ -79,6 +82,7 @@ const deleteCategory = async (id) => {
 module.exports = {
     getAllCategories,
     getCategoryById,
+    getCategoryByName,
     addCategory,
     updateCategory,
     deleteCategory

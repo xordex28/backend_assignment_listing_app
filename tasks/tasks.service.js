@@ -6,6 +6,8 @@ const { ObjectId } = require('bson');
 const { asyncForEach } = require('../utils/generalFunctions');
 const { getAssignmentUserAproven } = require('../users/users.service');
 const randT = require("rand-token");
+const qrcode = require("qrcode");
+const config = require('../config.json');
 
 const getAllTasks = async ({ pending, approved, rejected }, currentUser) => {
     console.log(pending);
@@ -80,7 +82,6 @@ const addTask = async (task, user) => {
     }
 
     const newTask = new Task(task);
-
     await newTask.save((err) => {
         throw err;
     });
@@ -116,9 +117,9 @@ const approvedTask = async (taskId, user, approvedTaskValue) => {
             throw 'User does not have permission to approve';
         }
     }
-    if(approvedTaskValue){
+    if (approvedTaskValue) {
         task.approved = true;
-    }else{
+    } else {
         task.rejected = true;
 
     }
@@ -133,14 +134,18 @@ const approvedTask = async (taskId, user, approvedTaskValue) => {
     }
 
     task.codeValidator = newCodeSecret;
+    await generateQr(newCodeSecret, taskId);
+    task.qr = config.domain + '/' + 'tasks/image/' + taskId + '.svg';
     task.updatedDate = Date.now();
 
-    await task.save((err) => {
-        throw err;
-    });
+    try {
+        await Task.updateOne({'_id':ObjectId(taskId)},task);
+    } catch (error) {
+        throw error;
+        
+    }
     return task;
 }
-
 
 const testRandom = async () => {
     let codings = randT.generate(16) + '$#@';
@@ -151,6 +156,19 @@ const testRandom = async () => {
         document = await Task.findOne({ 'codeValidator': newCodeSecret });
     }
     return newCodeSecret;
+}
+
+const generateQr = async (secret, id) => {
+    try {
+        const response = await qrcode.toFile(`images/tasks/${id}.svg`, secret,
+            {
+                type: 'svg'
+            });
+            console.log(response);
+    } catch (error) {
+        console.log('error', error);
+    }
+    return {}
 }
 
 module.exports = {

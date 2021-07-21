@@ -42,6 +42,9 @@ const modelTask = new Schema({
     codeValidator: {
         type: String
     },
+    qr: {
+        type: String
+    },
     createdDate: {
         type: Date,
         default: Date.now()

@@ -10,9 +10,13 @@ const getAllCategories = (req, res, next) => {
 };
 
 const getCategoryById = (req, res, next) => {
-    console.log(req.originalUrl);
-
     categoryService.getCategoryById(req.params.id)
+        .then(categories => res.json(categories))
+        .catch(err => next(err));
+};
+
+const getCategoryByName = (req, res, next) => {
+    categoryService.getCategoryByName(req.params.name)
         .then(categories => res.json(categories))
         .catch(err => next(err));
 };
@@ -37,6 +41,7 @@ const deleteCategory = (req, res, next) => {
 
 router.get('/', getAllCategories);
 router.get('/:id', getCategoryById);
+router.get('/match/:name', getCategoryByName);
 router.post('/', addCategory);
 router.put('/:id', updateCategory);
 router.delete('/:id', deleteCategory);

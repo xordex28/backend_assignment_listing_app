@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const taskService = require('./tasks.service');
-
+const routeImages = '/images/tasks/';
 
 const getAllTasks = (req, res, next) => {
     taskService.getAllTasks(req.query, req.currentUser)
@@ -15,10 +15,9 @@ const getTaskById = (req, res, next) => {
         .catch(err => next(err));
 }
 
-const testRandom = (req, res, next) => {
-    taskService.testRandom()
-        .then(task => res.json(task))
-        .catch(err => next(err));
+const imageTask = (req, res, next) => {
+    const route = process.cwd() + routeImages + req.params.image
+    res.sendFile(route);
 }
 
 const addTask = (req, res, next) => {
@@ -39,11 +38,19 @@ const rejectTask = (req, res, next) => {
         .catch(err => next(err));
 }
 
+const testTask = (req, res, next) => {
+    taskService.testQr(req.body.message)
+        .then(task => res.json(task))
+        .catch(err => next(err));
+}
+
 router.get('/', getAllTasks);
 router.get('/:id', getTaskById);
+router.get('/image/:image', imageTask);
 router.post('/', addTask);
 router.post('/approved/:id', approvedTask);
 router.post('/reject/:id', rejectTask);
+
 
 
 
