@@ -8,14 +8,11 @@ const { getAssignmentUserAproven } = require('../users/users.service');
 const randT = require("rand-token");
 const qrcode = require("qrcode");
 const config = require('../config.json');
+const userService = require('../users/users.service');
 
-const getAllTasks = async ({ pending, approved, rejected }, currentUser) => {
+const getAllTasks = async ({ pending, approved, rejected }) => {
     console.log(pending);
     let query = {
-        '$or': [
-            { user: ObjectId(currentUser._id) },
-            { answeredFor: ObjectId(currentUser._id) }
-        ]
     };
     if (pending) {
         query = { ...query, approved: false, rejected: false };
@@ -38,6 +35,113 @@ const getTaskById = async (id) => {
         throw 'Task not found';
     }
     return task;
+}
+
+const getTaskByUser = async (user, params) => {
+    const permitsUser = await userService.getAssignmentUserAproven(user.id);
+    let conditions = {
+        '$or': []
+    };
+    [...permitsUser.permitsRole, ...permitsUser.permitsUser].forEach((currentPermit) => {
+        currentPermit.categories.forEach((currentPermitCategory) => {
+            if (currentPermitCategory.canApprove) {
+                conditions.$or.push({ 'client': ObjectId(currentPermit.client), 'category': ObjectId(currentPermitCategory.category) });
+            }
+        });
+    });
+    let query = {
+        '$and': [
+            conditions
+        ]
+
+    }
+    console.log(JSON.stringify(query));
+    const tasks = await Task.find(query);
+    let taskSend = {
+        'answered': [],
+        'entered': [],
+        'all': []
+    };
+
+    tasks.forEach((current) => {
+        if (params) {
+            if ('passed' in params && params.passed) {
+                if (current.approved) {
+                    if (current.user && (current.user.toString() === user.id)) {
+                        taskSend.entered.push(current);
+                    }
+
+                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                        taskSend.answered.push(current);
+                    }
+
+                    if (
+                        !(current.user && (current.user.toString() === user.id))
+                        &&
+                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        )) {
+                        taskSend.all.push(current);
+                    }
+                    taskSend.push(current);
+                }
+            }
+            if ('reject' in params && params.rejected) {
+                if (current.rejected) {
+                    if (current.user && (current.user.toString() === user.id)) {
+                        taskSend.entered.push(current);
+                    }
+
+                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                        taskSend.answered.push(current);
+                    }
+
+                    if (
+                        !(current.user && (current.user.toString() === user.id))
+                        &&
+                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        )) {
+                        taskSend.all.push(current);
+                    }
+                }
+            }
+            if ('pending' in params && params.pending) {
+                if (!current.rejected && !current.approved) {
+                    if (current.user && (current.user.toString() === user.id)) {
+                        taskSend.entered.push(current);
+                    }
+
+                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                        taskSend.answered.push(current);
+                    }
+                    if (
+                        !(current.user && (current.user.toString() === user.id))
+                        &&
+                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        )) {
+                        taskSend.all.push(current);
+                    }
+                }
+            }
+        } else {
+            if (current.user && (current.user.toString() === user.id)) {
+                taskSend.entered.push(current);
+            }
+
+            if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                taskSend.answered.push(current);
+            }
+
+            if (
+                !(current.user && (current.user.toString() === user.id))
+                &&
+                !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                )) {
+                taskSend.all.push(current);
+            }
+        }
+    });
+
+    return taskSend;
 }
 
 const addTask = async (task, user) => {
@@ -139,10 +243,10 @@ const approvedTask = async (taskId, user, approvedTaskValue) => {
     task.updatedDate = Date.now();
 
     try {
-        await Task.updateOne({'_id':ObjectId(taskId)},task);
+        await Task.updateOne({ '_id': ObjectId(taskId) }, task);
     } catch (error) {
         throw error;
-        
+
     }
     return task;
 }
@@ -164,7 +268,7 @@ const generateQr = async (secret, id) => {
             {
                 type: 'svg'
             });
-            console.log(response);
+        console.log(response);
     } catch (error) {
         console.log('error', error);
     }
@@ -174,6 +278,7 @@ const generateQr = async (secret, id) => {
 module.exports = {
     getAllTasks,
     getTaskById,
+    getTaskByUser,
     testRandom,
     addTask,
     approvedTask
