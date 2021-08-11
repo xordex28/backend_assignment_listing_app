@@ -25,6 +25,7 @@ const isRevoked = async (req, payload, done) => {
     //         return done(null, true);
     //     }
     // }
+    //console.log({user});
     req.currentUser = user;
     done();
 };

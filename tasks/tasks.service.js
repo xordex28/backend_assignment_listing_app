@@ -10,35 +10,9 @@ const qrcode = require("qrcode");
 const config = require('../config.json');
 const userService = require('../users/users.service');
 
-const getAllTasks = async ({ pending, approved, rejected }) => {
-    console.log(pending);
-    let query = {
-    };
-    if (pending) {
-        query = { ...query, approved: false, rejected: false };
-    }
-
-    if (approved) {
-        query = { ...query, approved: true, rejected: false };
-    }
-
-    if (rejected) {
-        query = { ...query, approved: false, rejected: true };
-    }
-    const allTasks = await Task.find(query);
-    return allTasks;
-}
-
-const getTaskById = async (id) => {
-    const task = await Task.findOne({ _id: ObjectId(id) });
-    if (!task) {
-        throw 'Task not found';
-    }
-    return task;
-}
-
-const getTaskByUser = async (user, params) => {
-    const permitsUser = await userService.getAssignmentUserAproven(user.id);
+const getAllTasks = async (user, params) => {
+    console.log(user._id.toString());
+    const permitsUser = await userService.getAssignmentUserAproven(user._id.toString());
     let conditions = {
         '$or': []
     };
@@ -55,8 +29,9 @@ const getTaskByUser = async (user, params) => {
         ]
 
     }
-    console.log(JSON.stringify(query));
+
     const tasks = await Task.find(query);
+    //console.log({ tasks, user, params });
     let taskSend = {
         'answered': [],
         'entered': [],
@@ -64,21 +39,22 @@ const getTaskByUser = async (user, params) => {
     };
 
     tasks.forEach((current) => {
-        if (params) {
+        console.log(Object.keys(params).length > 0);
+        if (Object.keys(params).length > 0) {
             if ('passed' in params && params.passed) {
                 if (current.approved) {
-                    if (current.user && (current.user.toString() === user.id)) {
+                    if (current.user && (current.user.toString() === user._id.toString())) {
                         taskSend.entered.push(current);
                     }
 
-                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                    if (current.answeredFor && (current.answeredFor.toString() === user._id.toString())) {
                         taskSend.answered.push(current);
                     }
 
                     if (
-                        !(current.user && (current.user.toString() === user.id))
+                        !(current.user && (current.user.toString() === user._id.toString()))
                         &&
-                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        !(current.answeredFor && (current.answeredFor.toString() === user._id.toString())
                         )) {
                         taskSend.all.push(current);
                     }
@@ -87,18 +63,18 @@ const getTaskByUser = async (user, params) => {
             }
             if ('reject' in params && params.rejected) {
                 if (current.rejected) {
-                    if (current.user && (current.user.toString() === user.id)) {
+                    if (current.user && (current.user.toString() === user._id.toString())) {
                         taskSend.entered.push(current);
                     }
 
-                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                    if (current.answeredFor && (current.answeredFor.toString() === user._id.toString())) {
                         taskSend.answered.push(current);
                     }
 
                     if (
-                        !(current.user && (current.user.toString() === user.id))
+                        !(current.user && (current.user.toString() === user._id.toString()))
                         &&
-                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        !(current.answeredFor && (current.answeredFor.toString() === user._id.toString())
                         )) {
                         taskSend.all.push(current);
                     }
@@ -106,35 +82,43 @@ const getTaskByUser = async (user, params) => {
             }
             if ('pending' in params && params.pending) {
                 if (!current.rejected && !current.approved) {
-                    if (current.user && (current.user.toString() === user.id)) {
+                    if (current.user && (current.user.toString() === user._id.toString())) {
                         taskSend.entered.push(current);
                     }
 
-                    if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+                    if (current.answeredFor && (current.answeredFor.toString() === user._id.toString())) {
                         taskSend.answered.push(current);
                     }
                     if (
-                        !(current.user && (current.user.toString() === user.id))
+                        !(current.user && (current.user.toString() === user._id.toString()))
                         &&
-                        !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                        !(current.answeredFor && (current.answeredFor.toString() === user._id.toString())
                         )) {
                         taskSend.all.push(current);
                     }
                 }
             }
         } else {
-            if (current.user && (current.user.toString() === user.id)) {
+            console.log({
+                "condicion1": current.user && (current.user.toString() === user._id.toString()),
+                "condicion2": current.answeredFor && (current.answeredFor.toString() === user._id.toString()),
+                "condicion3": !(current.user && (current.user.toString() === user._id.toString()))
+                    &&
+                    !(current.answeredFor && (current.answeredFor.toString() === user._id.toString())
+                    )
+            });
+            if (current.user && (current.user.toString() === user._id.toString())) {
                 taskSend.entered.push(current);
             }
 
-            if (current.answeredFor && (current.answeredFor.toString() === user.id)) {
+            if (current.answeredFor && (current.answeredFor.toString() === user._id.toString())) {
                 taskSend.answered.push(current);
             }
 
             if (
-                !(current.user && (current.user.toString() === user.id))
+                !(current.user && (current.user.toString() === user._id.toString()))
                 &&
-                !(current.answeredFor && (current.answeredFor.toString() === user.id)
+                !(current.answeredFor && (current.answeredFor.toString() === user._id.toString())
                 )) {
                 taskSend.all.push(current);
             }
@@ -142,6 +126,14 @@ const getTaskByUser = async (user, params) => {
     });
 
     return taskSend;
+}
+
+const getTaskById = async (id) => {
+    const task = await Task.findOne({ _id: ObjectId(id) });
+    if (!task) {
+        throw 'Task not found';
+    }
+    return task;
 }
 
 const addTask = async (task, user) => {
@@ -278,7 +270,6 @@ const generateQr = async (secret, id) => {
 module.exports = {
     getAllTasks,
     getTaskById,
-    getTaskByUser,
     testRandom,
     addTask,
     approvedTask

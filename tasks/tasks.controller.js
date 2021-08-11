@@ -4,24 +4,13 @@ const taskService = require('./tasks.service');
 const routeImages = '/images/tasks/';
 
 const getAllTasks = (req, res, next) => {
-    taskService.getAllTasks(req.query, req.currentUser)
+    taskService.getAllTasks(req.currentUser,req.query)
         .then(task => res.json(task))
         .catch(err => next(err));
 }
 
 const getTaskById = (req, res, next) => {
     taskService.getTaskById(req.params.id)
-        .then(task => res.json(task))
-        .catch(err => next(err));
-}
-
-const getTaskByUser = (req, res, next) => {
-    taskService.getTaskByUser({
-        id: req.params.id,
-        role: {
-            canSuper: false
-        }
-    }, req.query)
         .then(task => res.json(task))
         .catch(err => next(err));
 }
@@ -57,7 +46,6 @@ const testTask = (req, res, next) => {
 
 router.get('/', getAllTasks);
 router.get('/:id', getTaskById);
-router.get('/user/:id', getTaskByUser);
 router.get('/image/:image', imageTask);
 router.post('/', addTask);
 router.post('/approved/:id', approvedTask);

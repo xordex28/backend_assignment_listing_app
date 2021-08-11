@@ -22,7 +22,7 @@ app.use((req,res,next)=>{
     next();
 })
 
-//app.use(jwt());
+app.use(jwt());
 
 app.use('/categories', require('./categories/categories.controller'));
 app.use('/clients', require('./clients/clients.controller'));

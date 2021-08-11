@@ -376,7 +376,7 @@ const authenticate = async ({ username, password }) => {
             },
             config.secret,
             {
-                expiresIn: Development ? 60 * 60 : 60
+                //expiresIn: Development ? 60 * 60 : 60
             }
         );
 
@@ -412,7 +412,7 @@ const gNewTokenAcces = async (usernameparam, tokenRefresh) => {
                 },
                 config.secret,
                 {
-                    expiresIn: Development ? 60 * 60 : 60
+                    //expiresIn: Development ? 60 * 60 : 60
                 }
             );
             await user.save();
